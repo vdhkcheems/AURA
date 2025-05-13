@@ -1,87 +1,77 @@
-import os
 import streamlit as st
-from query_rag import classify_query_type, extract_definition_target, extract_calculation_expression, classify_query, rag_query
-from retriever import load_and_split_docs, build_faiss_index, load_faiss_index
-from langchain.embeddings import SentenceTransformerEmbeddings
-import faiss
-from langchain.vectorstores import FAISS
-from tools import get_definition
+from query_rag import retrieve_top_k
+from generation import generate_answer, classify_query, model
 
-index_filename = "faiss_index.index"
+papers=['attention_is_all_you_need']
+papers = ", ".join(papers)
 
-def load_or_create_vector_db():
-    # Check if the FAISS index file exists
-    if os.path.exists(index_filename):
-        try:
-            embedding_model = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
-            vectordb = FAISS.load_local(index_filename, embedding_model, allow_dangerous_deserialization=True)
-            return vectordb
-        except Exception as e:
-            st.error(f"Error loading FAISS index: {e}")
-            return None
+st.set_page_config(page_title="Research Paper Q&A", layout="wide")
+
+# Initialize session state
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
+
+st.title("📄 Research Paper Q&A Chatbot")
+
+# Chat display
+for user_msg, bot_msg in st.session_state.chat_history:
+    st.markdown(f"**🧑‍💻 You:** {user_msg}")
+    st.markdown(f"**🤖 Gemini:** {bot_msg}")
+
+# Input box – auto-submits on Enter
+user_input = st.text_input("Ask a question about the research papers:", key="input" + str(st.session_state.chat_history[-1][0] if st.session_state.chat_history else ''))
+
+if user_input.strip():  # Triggers when user presses Enter
+    # Step 1: Classify the query
+    query_type = classify_query(user_input, model)
+
+    # Step 2: Maintain conversation history
+    history_text = "\n\n".join(
+        [f"User: {q}\nAssistant: {a}" for q, a in st.session_state.chat_history]
+    )
+
+    # Step 3: Build prompt based on query type
+    if query_type == "RAG":
+        top_chunks = retrieve_top_k(user_input, k=5)
+        context_text = "".join(
+            [f"Title: {c['title']}\nHeading: {c['heading']}\nText: {c['text']}\n\n" for c in top_chunks]
+        )
+        prompt = f"""
+        You are a research paper Q&A assistant. Answer based ONLY on the following [Context] and [Previous conversation]. also begin your answer with 'RAG Route'. At the end of your response tell which papers you took it from and which sections you referred, it has been provided to you under title and heading sections.
+        Give answer clearly and in detail.
+
+        [Previous conversation]
+        {history_text if history_text else "None"}
+
+        [Context]
+        {context_text}
+
+        [User query]
+        {user_input}
+        """
     else:
-        # If the index doesn't exist, create it
-        st.write("FAISS index not found. Building the index now...")
-        try:
-            chunks = load_and_split_docs()
-            vectordb = build_faiss_index(chunks, index_filename)
-            st.write("FAISS index created successfully.")
-            return vectordb
-        except Exception as e:
-            st.error(f"Error while creating FAISS index: {e}")
-            return None
+        prompt = f"""
+        You are a helpful research assistant. Continue the conversation naturally using only the [Previous conversation] and [User query]. also begin your answer with 'Normal route'
 
+        [Previous conversation]
+        {history_text if history_text else "None"}
 
-st.title("Agentic AI - for research papers and definitions or calculations")
+        [User query]
+        {user_input}
+        """
 
-description = """
-Welcome to the Agnetic AI by Antriksh Arya. Ask a question related to the provided papers.
-- Attention Is All You Need
-- BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding
-- Improving Language Understanding by Generative Pre-Training
+    # Step 4: Generate response safely
+    try:
+        response = model.generate_content(prompt)
+        answer = response.text.strip()
+    except Exception as e:
+        answer = f"⚠️ Sorry, an error occurred: {str(e)}"
 
-Or you can ask for the definition of any term, which will be answered through a dictionary api like
-- Define calculator
-- What do you mean by computer?
+    # Step 5: Update chat history and clear input
+    st.session_state.chat_history.append((user_input, answer))
+    st.rerun()
 
-You can also provide simple calulations or word problems like
-- Calculate 4+4
-- If A has 4 mangoes and B takes from him 2 gut C gives him 1, how many mangoes does A have.
-"""
-st.write(description)
-
-
-query = st.text_input("Ask a question:")
-
-
-if query:
-    
-    vectordb = load_or_create_vector_db()
-    
-    if vectordb:
-        # Classify the query and get the category and target
-        category, target, program_expr = classify_query(query, doc_titles=['Attention is all you need', 'BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding', 'Improving Language Understanding by Generative Pre-Training'])
-        
-        if category == "definition":
-            # Handle definition queries
-            definition = get_definition(target)
-            response = f"""Definition route, Using the dictionary API.
-            {definition}"""
-            st.write(response)
-        
-        elif category == "calculation":
-            # Handle calculation queries
-            try:
-                result = eval(program_expr)
-                safe_expr = program_expr.replace("*", "\\*")
-                response = f"Calculation route.\nThe result of {safe_expr} is {result}"
-                st.write(response)
-            except Exception as e:
-                st.error(f"Error calculating the expression: {e}")
-        
-        else:
-            # If it's a regular RAG query
-            response = rag_query(vectordb, query)
-            result = f"""RAG route, reffering the provided papers.
-            Answer: {response}"""
-            st.write(result)
+# Clear chat button
+if st.button("🗑️ Clear Chat"):
+    st.session_state.chat_history = []
+    st.rerun()

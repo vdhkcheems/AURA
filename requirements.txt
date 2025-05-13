@@ -1,7 +1,5 @@
-langchain
-langchain-community
-google-generativeai
-dotenv
-faiss-cpu
-sentence_transformers
 streamlit
+sentence-transformers
+google-generativeai
+faiss
+python-dotenv

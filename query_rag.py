@@ -1,180 +1,57 @@
-import google.generativeai as genai
-from retriever import load_and_split_docs, build_faiss_index, load_faiss_index
-from dotenv import load_dotenv
-import os
-from tools import get_definition
+import faiss
 import json
-import streamlit as st
+from sentence_transformers import SentenceTransformer
+import torch
 
-load_dotenv()
-api_key = st.secrets["GEMINI_API_KEY"]
-os.environ["GEMINI_API_KEY"] = api_key  
+# Load model (BGE-base)
+device = "cuda" if torch.cuda.is_available() else "cpu"
+model = SentenceTransformer("BAAI/bge-base-en-v1.5", device=device)
 
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+# Load FAISS index
+index = faiss.read_index("paper_embeddings.index")
 
-model = genai.GenerativeModel("gemini-2.0-flash")
+# Load metadata (just to show titles/headings, no text)
+with open("chunks_metadata.json", "r", encoding="utf-8") as f:
+    metadata = json.load(f)
 
-index_filename = "faiss_index.index"
+# Load chunk texts (from chunks.jsonl)
+chunks = []
+with open("data/chunks.jsonl", "r", encoding="utf-8") as f:
+    for line in f:
+        chunks.append(json.loads(line))
 
-doc_titles = ['Attention is all you need', 'BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding', 'Improving Language Understanding by Generative Pre-Training']
+# Embed query to retrieve relevant chunks
+def embed_query(query):
+    prompt = "Represent this sentence for retrieval: " + query
+    return model.encode([prompt], convert_to_numpy=True)
 
-import json
+# Retrieve top-k chunks based on the query
+def retrieve_top_k(query, k=5):
+    query_embedding = embed_query(query)
+    D, I = index.search(query_embedding, k)
 
-def classify_query_type(query: str, doc_titles: list[str]) -> str:
-    """
-    Classify a query as 'definition', 'calculation', or 'rag', considering document context.
-    """
-    title_context = ", ".join(doc_titles)
-    routing_prompt = f"""
-You are a smart routing assistant.
-Given a user question and the titles of available research papers, classify the question into one of these categories:
-1. definition — if the user wants the meaning of a term **not related to the research papers**.
-2. calculation — if the user wants to calculate something (math-related).
-3. rag — if the question relates to the research papers or needs in-depth understanding.
+    results = []
+    for idx in I[0]:
+        meta = metadata[idx]
+        chunk_text = chunks[idx]["text"]
 
-Available papers:
-{title_context}
+        results.append({
+            "title": meta["paper_title"],
+            "heading": meta["heading"],
+            "chunk_index": meta["chunk_index"],
+            "text": chunk_text
+        })
+    return results
 
-Respond ONLY in this JSON format:
-{{
-  "category": "..."
-}}
-
-Question: "{query}"
-"""
-
-    response = model.generate_content(routing_prompt)
-    cleaned_response = response.text.strip('`').strip()
-    if cleaned_response.startswith("json"):
-        cleaned_response = cleaned_response[4:].strip()
-
-    try:
-        parsed = json.loads(cleaned_response)
-        return parsed.get("category", "rag").strip()
-    except Exception:
-        return "rag"
-
-
-# --- Function 2: extract_definition_target ---
-def extract_definition_target(query: str) -> str:
-    """
-    Extract the target term to be defined from a definition-type query.
-    """
-    prompt = f"""
-You are a definition extractor.
-From the following question, extract the exact term the user wants to define.
-Respond ONLY in this JSON format:
-{{
-  "target": "..."
-}}
-
-Question: "{query}"
-"""
-    response = model.generate_content(prompt)
-    cleaned_response = response.text.strip('`').strip()
-    if cleaned_response.startswith("json"):
-        cleaned_response = cleaned_response[4:].strip()
-
-    try:
-        parsed = json.loads(cleaned_response)
-        return parsed.get("target", "").strip()
-    except Exception:
-        return ""
-
-
-# --- Function 3: extract_calculation_expression ---
-def extract_calculation_expression(query: str) -> str:
-    """
-    Convert a natural language math query into a Python-evaluable expression.
-    """
-    prompt = f"""
-You are a code converter.
-Convert the following math problem into a single-line Python-evaluable expression.
-Use '**' for powers (e.g., 2^5+3^2 => 2**5+3**2), and only return valid Python.
-Respond ONLY in this JSON format:
-{{
-  "expression": "..."
-}}
-
-Question: "{query}"
-"""
-    response = model.generate_content(prompt)
-    cleaned_response = response.text.strip('`').strip()
-    if cleaned_response.startswith("json"):
-        cleaned_response = cleaned_response[4:].strip()
-
-    try:
-        parsed = json.loads(cleaned_response)
-        return parsed.get("expression", "").strip()
-    except Exception:
-        return ""
-
-
-# Optional: wrapper function if needed for legacy compatibility
-def classify_query(query: str, doc_titles: list[str]):
-    category = classify_query_type(query, doc_titles)
-    if category == "definition":
-        return category, extract_definition_target(query), None
-    elif category == "calculation":
-        return category, query, extract_calculation_expression(query)
-    else:
-        return category, None, None
-
-
-
-def rag_query(vectordb, query):
-    # Retrieving top 3 chunks
-    docs = vectordb.similarity_search(query, k=3)
-    context = "\n".join([doc.page_content for doc in docs])
-
-    prompt = f"""You are an academic assistant helping explain AI research papers.
-Use the following context to answer the question.
-
-Context:
-{context}
-
-Question: {query}
-Answer:"""
-
-    # Generate the answer using Gemini
-    response = model.generate_content(prompt)
-    return response.text
-
+# Example usage
 if __name__ == "__main__":
-    try:
-        vectordb = load_faiss_index(index_filename)
-    except Exception as e:
-        print(f"Error loading FAISS index: {e}")
-        chunks = load_and_split_docs()
-        vectordb = build_faiss_index(chunks)
+    query = input("Ask a question: ")
+    top_chunks = retrieve_top_k(query, k=5)
 
-    print("Welcome to the Research Paper Q&A Assistant!")
-    print("Ask a question (or type 'exit' to quit):")
-
-    while True:
-        query = input(">> ").strip()
-        if query.lower() == "exit":
-            break
-
-        category, target, program_expr = classify_query(query, doc_titles)
-        print(f"[Agent] Category: {category} | Target: {target}")
-
-        if category == "definition":
-            print("[Agent] Routing to Dictionary Tool")
-            print(get_definition(target))
-
-        elif category == "calculation":
-            print("[Agent] Routing to Calculator")
-            try:
-                result = eval(program_expr)
-                print(f"{program_expr} :", result)
-            except Exception as e:
-                print("Could not compute the result:", e)
-
-
-        else:
-            print("[Agent] Routing to RAG Pipeline")
-            answer = rag_query(vectordb, query)
-            print("Answer:", answer)
-
-        print("-" * 50)
+    print("\n🔍 Top Retrieved Chunks:\n")
+    for i, chunk in enumerate(top_chunks):
+        print(f"--- Chunk {i+1} ---")
+        print(f"Title   : {chunk['title']}")
+        print(f"Heading : {chunk['heading']}")
+        print(f"Text    : {chunk['text'][:500]}{'...' if len(chunk['text']) > 500 else ''}")
+        print()
