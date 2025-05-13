@@ -1,5 +1,5 @@
 streamlit
 sentence-transformers
 google-generativeai
-faiss
+faiss-cpu
 python-dotenv
