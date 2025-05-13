@@ -11,7 +11,15 @@ st.set_page_config(page_title="Research Paper Q&A", layout="wide")
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
-st.title("📄 Research Paper Q&A Chatbot")
+st.title("📄 AURA - Artificial Understanding of Research Articles")
+description = """
+Welcome to AURA - Artificial Understanding of Research Articles.
+I am An Agentic AI developed by Antriksh Arya to simplify understanding of complex research papers.
+I use a RAG based architecture to answer questions related to research papers but you can also ask me about dogs.
+I am a Google Gemini based app, so if you ask me about research papers, i do a heavy research and only answer from the research papers I have access to, using RAG,
+but if you ask me about anything else I will be a simple Gemini model.
+"""
+st.write(description)
 
 # Chat display
 for user_msg, bot_msg in st.session_state.chat_history:
