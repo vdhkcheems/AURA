@@ -13,11 +13,14 @@ if "chat_history" not in st.session_state:
 
 st.title("📄 AURA - Artificial Understanding of Research Articles")
 description = """
-Welcome to AURA - Artificial Understanding of Research Articles.
-I am An Agentic AI developed by Antriksh Arya to simplify understanding of complex research papers.
-I use a RAG based architecture to answer questions related to research papers but you can also ask me about dogs.
-I am a Google Gemini based app, so if you ask me about research papers, i do a heavy research and only answer from the research papers I have access to, using RAG,
-but if you ask me about anything else I will be a simple Gemini model.
+Welcome to AURA - Artificial Understanding of Research Articles.\n
+I am An Agentic AI developed by Antriksh Arya to simplify understanding of complex research papers.\n
+I use a RAG based architecture to answer questions related to research papers but you can also ask me about dogs.\n
+I am a Google Gemini based app, so if you ask me about research papers, i do a heavy research and only answer from the research papers I have access to, using RAG,\n
+but if you ask me about anything else I will be a simple Gemini model.\n
+
+Current papers I have access to
+- Attention Is All You Need
 """
 st.write(description)
 
