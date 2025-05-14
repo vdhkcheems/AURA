@@ -49,8 +49,6 @@ Whether you're a researcher, student, or enthusiast, AURA can help you:
 
 ### 🔗 Use Online
 
-### 🔗 Use Online
-
 Try the live demo (hosted on [Streamlit Community Cloud](https://share.streamlit.io/)):
 
 > **[🌐 Launch AURA](https://aura-vdhkcheems.streamlit.app/)**
@@ -101,6 +99,11 @@ Here are a few planned upgrades to AURA:
 ---
 
 ### 🔗 Demo
+
+![Screenshot_20250514_125409](https://github.com/user-attachments/assets/545a8783-baff-4fa6-bdbb-946bb8ad1b17)
+
+
+![Screenshot_20250514_125437](https://github.com/user-attachments/assets/e025a650-3fe9-465f-9d2b-196a2cacc812)
 
 
 
