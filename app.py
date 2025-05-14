@@ -56,7 +56,7 @@ with st.container():
 
 # Use normal Streamlit markdown for the rest
 st.markdown("---")
-st.markdown("### 📚 Available Paper(s)\n- *Attention Is All You Need*")
+st.markdown("### 📚 Available Paper(s)\n- *Attention Is All You Need*\n- *BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding*")
 
 # Display chat history
 st.markdown("<div class='chat-section'>", unsafe_allow_html=True)

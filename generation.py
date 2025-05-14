@@ -9,7 +9,7 @@ load_dotenv()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 api_key = st.secrets["GEMINI_API_KEY"]
 os.environ["GEMINI_API_KEY"] = api_key
-papers=['attention is all you need']
+papers=['attention is all you need', 'BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding']
 papers = ", ".join(papers)
 
 def classify_query(query, model):
