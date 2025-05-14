@@ -8,10 +8,10 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 model = SentenceTransformer("BAAI/bge-base-en-v1.5", device=device)
 
 # Load FAISS index
-index = faiss.read_index("paper_embeddings.index")
+index = faiss.read_index("data/paper_embeddings.index")
 
 # Load metadata (just to show titles/headings, no text)
-with open("chunks_metadata.json", "r", encoding="utf-8") as f:
+with open("data/chunks_metadata.json", "r", encoding="utf-8") as f:
     metadata = json.load(f)
 
 # Load chunk texts (from chunks.jsonl)
@@ -35,12 +35,10 @@ def retrieve_top_k(query, k=5):
         meta = metadata[idx]
         chunk_text = chunks[idx]["text"]
 
-        results.append({
-            "title": meta["paper_title"],
-            "heading": meta["heading"],
-            "chunk_index": meta["chunk_index"],
-            "text": chunk_text
-        })
+        result = meta.copy()  # full metadata (title, heading, authors, org, etc.)
+        result["text"] = chunk_text
+        results.append(result)
+
     return results
 
 # Example usage
@@ -51,7 +49,9 @@ if __name__ == "__main__":
     print("\n🔍 Top Retrieved Chunks:\n")
     for i, chunk in enumerate(top_chunks):
         print(f"--- Chunk {i+1} ---")
-        print(f"Title   : {chunk['title']}")
-        print(f"Heading : {chunk['heading']}")
+        print(f"Title        : {chunk.get('paper_title')}")
+        print(f"Heading      : {chunk.get('heading')}")
+        print(f"Authors      : {chunk.get('authors')}")
+        print(f"Organization : {chunk.get('organization')}")
         print(f"Text    : {chunk['text'][:500]}{'...' if len(chunk['text']) > 500 else ''}")
         print()

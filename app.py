@@ -2,54 +2,74 @@ import streamlit as st
 from query_rag import retrieve_top_k
 from generation import generate_answer, classify_query, model
 
-papers=['attention_is_all_you_need']
-papers = ", ".join(papers)
+# Setup Streamlit config
+st.set_page_config(page_title="🧠 AURA - Research Paper Q&A", layout="wide", page_icon="📄")
 
-st.set_page_config(page_title="Research Paper Q&A", layout="wide")
+# Custom CSS for modern card-like UI
+# Centered title and description
+# Centered title and description
+st.markdown("""
+    <div style='text-align: center; margin-top: 20px;'>
+        <h1 style='color: #f1f1f1;'>📄 AURA - Artificial Understanding of Research Articles</h1>
+        <p style='font-size: 1.1rem; color: #d1d1d1; max-width: 800px; margin: auto;'>
+            Welcome to <strong>AURA</strong> – your smart agentic AI for demystifying complex research papers!<br>
+            I’m powered by <strong>Google Gemini</strong> and use a <strong>RAG (Retrieval-Augmented Generation)</strong> architecture.
+        </p>
+        <p style='font-size: 1rem; color: #b0b0b0; max-width: 700px; margin: auto;'>
+            🧠 Ask me about any of the research papers I have access to, and I’ll fetch the most relevant parts to answer you precisely.<br>
+            🐶 Ask me anything else (even about dogs!), and I’ll respond like a regular Gemini model.
+        </p>
+    </div>
+    
+    <hr style='margin-top: 30px; margin-bottom: 10px;'>
+
+    <h3 style='text-align: left;'>📚 Available Paper(s)</h3>
+    <ul style='text-align: left;'>
+        <li><em>Attention Is All You Need</em></li>
+    </ul>
+""", unsafe_allow_html=True)
+
+
 
 # Initialize session state
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
-st.title("📄 AURA - Artificial Understanding of Research Articles")
-description = """
-Welcome to AURA - Artificial Understanding of Research Articles.\n
-I am An Agentic AI developed by Antriksh Arya to simplify understanding of complex research papers.\n
-I use a RAG based architecture to answer questions related to research papers but you can also ask me about dogs.\n
-I am a Google Gemini based app, so if you ask me about research papers, i do a heavy research and only answer from the research papers I have access to, using RAG,\n
-but if you ask me about anything else I will be a simple Gemini model.\n
-
-Current papers I have access to
-- Attention Is All You Need
-"""
-st.write(description)
-
-# Chat display
+# Display chat history
+st.markdown("<div class='chat-section'>", unsafe_allow_html=True)
 for user_msg, bot_msg in st.session_state.chat_history:
-    st.markdown(f"**🧑‍💻 You:** {user_msg}")
-    st.markdown(f"**🤖 Gemini:** {bot_msg}")
+    st.markdown(f"<div class='chat-bubble user'>🧑‍💻 <b>You:</b><br>{user_msg}</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='chat-bubble'>🤖 <b>AURA:</b><br>{bot_msg}</div>", unsafe_allow_html=True)
+st.markdown("</div>", unsafe_allow_html=True)
 
-# Input box – auto-submits on Enter
-user_input = st.text_input("Ask a question about the research papers:", key="input" + str(st.session_state.chat_history[-1][0] if st.session_state.chat_history else ''))
+# Input box
+user_input = st.text_input("💬 Ask a question about the research papers:", key="input" + str(st.session_state.chat_history[-1][0] if st.session_state.chat_history else ''))
 
-if user_input.strip():  # Triggers when user presses Enter
-    # Step 1: Classify the query
+# Handle input
+if user_input.strip():
     query_type = classify_query(user_input, model)
 
-    # Step 2: Maintain conversation history
     history_text = "\n\n".join(
         [f"User: {q}\nAssistant: {a}" for q, a in st.session_state.chat_history]
     )
 
-    # Step 3: Build prompt based on query type
     if query_type == "RAG":
         top_chunks = retrieve_top_k(user_input, k=5)
-        context_text = "".join(
-            [f"Title: {c['title']}\nHeading: {c['heading']}\nText: {c['text']}\n\n" for c in top_chunks]
-        )
+        context_text = "\n\n".join([
+            f"Paper Title: {c.get('paper_title')}\n"
+            f"Heading: {c.get('heading')}\n"
+            f"Authors: {c.get('authors')}\n"
+            f"Organization: {c.get('organization')}\n"
+            f"Text: {c['text']}..."
+            for c in top_chunks
+        ])
         prompt = f"""
-        You are a research paper Q&A assistant. Answer based ONLY on the following [Context] and [Previous conversation]. also begin your answer with 'RAG Route'. At the end of your response tell which papers you took it from and which sections you referred, it has been provided to you under title and heading sections.
-        Give answer clearly and in detail.
+        You are AURA - Artificial Undertsanding of Research Articles, an Agentic AI and a smart research paper Q&A assistant.
+
+        Begin your response with 'RAG Route:' and answer based **only** on the [Context] and [Previous conversation]. If the question is not clearly answered in the context, say:
+        "The context does not provide enough information to answer this question."
+
+        Always end your response with a list of which papers and which sections (heading) were used. If information repeated in multiple times then mention only once in the top relevant one.
 
         [Previous conversation]
         {history_text if history_text else "None"}
@@ -62,7 +82,9 @@ if user_input.strip():  # Triggers when user presses Enter
         """
     else:
         prompt = f"""
-        You are a helpful research assistant. Continue the conversation naturally using only the [Previous conversation] and [User query]. also begin your answer with 'Normal route'
+        You are AURA - Artificial Undertsanding of Research Articles, an Agentic AI and a smart research paper Q&A assistant.
+
+        Begin your response with 'Normal Route:' and continue the conversation naturally using only the [Previous conversation] and [User query].
 
         [Previous conversation]
         {history_text if history_text else "None"}
@@ -71,18 +93,16 @@ if user_input.strip():  # Triggers when user presses Enter
         {user_input}
         """
 
-    # Step 4: Generate response safely
     try:
         response = model.generate_content(prompt)
         answer = response.text.strip()
     except Exception as e:
         answer = f"⚠️ Sorry, an error occurred: {str(e)}"
 
-    # Step 5: Update chat history and clear input
     st.session_state.chat_history.append((user_input, answer))
     st.rerun()
 
-# Clear chat button
+# Clear chat
 if st.button("🗑️ Clear Chat"):
     st.session_state.chat_history = []
     st.rerun()

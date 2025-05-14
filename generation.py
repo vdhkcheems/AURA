@@ -36,13 +36,23 @@ model = genai.GenerativeModel("gemini-2.0-flash")
 # Function to generate answer using Gemini
 def generate_answer(query, top_chunks):
     # Combine top-k chunks into a single context
-    context = "\n\n".join([f"Title: {chunk['title']}\nHeading: {chunk['heading']}\nText: {chunk['text']}..." for chunk in top_chunks])
+    context = "\n\n".join([
+        f"Paper Title: {chunk.get('paper_title')}\n"
+        f"Heading: {chunk.get('heading')}\n"
+        f"Authors: {chunk.get('authors')}\n"
+        f"Organization: {chunk.get('organization')}\n"
+        f"Text: {chunk['text']}..."
+        for chunk in top_chunks
+    ])
 
     # Send the query and context to Gemini Pro
     prompt = f"""
-    You are a research paper QnA system. Based only on the following context from relevant papers, answer the user's question clearly and in detail. Do not use any external knowledge.
+    You are a research paper Q&A system. Based **only** on the following context from relevant papers, answer the user's question clearly and in detail. Do not use any external knowledge.
 
-    If the query is unrelated to the context, respond with "The context does not provide information related to this question. At the end of your response tell which papers you took it from and which sections you referred, it has been provided to you under title and heading sections.
+    If the query is unrelated to the context, respond with:
+    **"The context does not provide information related to this question."**
+
+    At the end of your response, always include a summary of **which papers** (title + authors) and **which sections** (heading) you referred to. This information is provided in each context block.
 
     [Context]
     {context}
