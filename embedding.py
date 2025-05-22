@@ -7,7 +7,7 @@ from sentence_transformers import SentenceTransformer
 model = SentenceTransformer("BAAI/bge-base-en-v1.5")
 
 # Load chunks from JSONL
-chunks_path = "data/chunks.jsonl"
+chunks_path = "data/chunks_aiayn.jsonl"
 with open(chunks_path, "r", encoding="utf-8") as f:
     chunks = [json.loads(line) for line in f]
 
@@ -28,7 +28,7 @@ faiss.write_index(index, "data/paper_embeddings.index")
 
 # Save full metadata
 metadata = [chunk["metadata"] for chunk in chunks]
-with open("data/chunks_metadata.json", "w", encoding="utf-8") as f:
+with open("data/chunks_aiayn_metadata.json", "w", encoding="utf-8") as f:
     json.dump(metadata, f, indent=2)
 
 print("✅ FAISS index and full metadata saved to 'data/'")

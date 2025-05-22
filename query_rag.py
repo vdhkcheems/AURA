@@ -10,17 +10,22 @@ model = SentenceTransformer("BAAI/bge-base-en-v1.5", device=device)
 # Load FAISS index
 index = faiss.read_index("data/paper_embeddings.index")
 
-# Load metadata (just to show titles/headings, no text)
-with open("data/chunks_metadata.json", "r", encoding="utf-8") as f:
+# Load metadata
+with open("data/chunks_aiayn_metadata.json", "r", encoding="utf-8") as f:
     metadata = json.load(f)
 
-# Load chunk texts (from chunks.jsonl)
+# Load chunk texts
 chunks = []
-with open("data/chunks.jsonl", "r", encoding="utf-8") as f:
+with open("data/chunks_aiayn.jsonl", "r", encoding="utf-8") as f:
     for line in f:
         chunks.append(json.loads(line))
 
-# Embed query to retrieve relevant chunks
+# Utility: Build full heading from section hierarchy
+def build_heading(meta):
+    parts = [meta.get("section"), meta.get("subsection"), meta.get("subsubsection")]
+    return " > ".join([p for p in parts if p])
+
+# Embed query using BGE (with recommended prefix)
 def embed_query(query):
     prompt = "Represent this sentence for retrieval: " + query
     return model.encode([prompt], convert_to_numpy=True)
@@ -35,8 +40,9 @@ def retrieve_top_k(query, k=5):
         meta = metadata[idx]
         chunk_text = chunks[idx]["text"]
 
-        result = meta.copy()  # full metadata (title, heading, authors, org, etc.)
+        result = meta.copy()
         result["text"] = chunk_text
+        result["heading"] = build_heading(meta)
         results.append(result)
 
     return results
@@ -50,8 +56,9 @@ if __name__ == "__main__":
     for i, chunk in enumerate(top_chunks):
         print(f"--- Chunk {i+1} ---")
         print(f"Title        : {chunk.get('paper_title')}")
-        print(f"Heading      : {chunk.get('heading')}")
-        print(f"Authors      : {chunk.get('authors')}")
-        print(f"Organization : {chunk.get('organization')}")
-        print(f"Text    : {chunk['text'][:500]}{'...' if len(chunk['text']) > 500 else ''}")
+        print(f"Heading      : {chunk.get('heading') or 'N/A'}")
+        print(f"Authors      : {', '.join(chunk.get('authors', []))}")
+        print(f"Organization : {chunk.get('organization', 'N/A')}")
+        print(f"year : {chunk.get('year', 'N/A')}")
+        print(f"Text         : {chunk['text'][:500]}{'...' if len(chunk['text']) > 500 else ''}")
         print()
