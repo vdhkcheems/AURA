@@ -4,11 +4,27 @@ from utils import (
     generate_rag_response, 
     generate_chat_response, 
     get_available_papers,
-    format_math_for_display
+    format_math_for_display,
+    convert_backticks_to_latex
 )
 
 # Setup Streamlit config
 st.set_page_config(page_title="🧠 AURA - Research Paper Q&A", layout="wide", page_icon="📄")
+
+# Inject MathJax to support inline LaTeX rendering
+st.markdown("""
+<script>
+MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$']],
+  },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+""", unsafe_allow_html=True)
+
 
 # Inject custom CSS
 st.markdown("""
@@ -93,20 +109,28 @@ for chat_item in st.session_state.chat_history:
     st.markdown(f"<div class='chat-bubble user'>🧑‍💻 <b>You:</b><br>{user_msg}</div>", unsafe_allow_html=True)
     
     # Bot response
-    st.markdown(f"<div class='chat-bubble'>🤖 <b>AURA:</b><br>{bot_response}", unsafe_allow_html=True)
+    processed_bot_response = convert_backticks_to_latex(bot_response)
+
+# Bot response with MathJax-friendly inline LaTeX
+    st.markdown(
+        f"<div class='chat-bubble'>🤖 <b>AURA:</b><br>{processed_bot_response}</div>", 
+        unsafe_allow_html=True
+)
     
     # Stats info
     if chunks_used > 0:
         st.markdown(f"<div class='stats-info'>📊 Retrieved {chunks_used} relevant chunks</div>", unsafe_allow_html=True)
     
     st.markdown("</div>", unsafe_allow_html=True)
+
     
     # Math equations if any
-    if math_equations:
-        st.markdown("<div class='math-section'>", unsafe_allow_html=True)
-        math_display = format_math_for_display(math_equations)
-        st.markdown(math_display)
-        st.markdown("</div>", unsafe_allow_html=True)
+    # if math_equations:
+    #     st.markdown("<div class='math-section'>", unsafe_allow_html=True)
+    #     for eq in math_equations:
+    #         st.latex(eq)
+    #     st.markdown("</div>", unsafe_allow_html=True)
+
 
 st.markdown("</div>", unsafe_allow_html=True)
 

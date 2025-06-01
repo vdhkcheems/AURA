@@ -127,3 +127,11 @@ def format_math_for_display(math_equations):
         formatted_math += f"$$\n{equation}\n$$\n\n"
     
     return formatted_math
+
+import re
+
+def convert_backticks_to_latex(text: str) -> str:
+    """
+    Converts inline `...` LaTeX to $...$ for MathJax rendering.
+    """
+    return re.sub(r"```([^`]+?)```", r"$$\1$$", text)
