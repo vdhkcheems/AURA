@@ -98,7 +98,7 @@ Here are a few planned upgrades to AURA:
 
 ---
 
-### 🔗 Demo
+### 🔗 [Demo](https://drive.google.com/file/d/1dSJ_Q62LESS9cQHTNSxzuDWu-gqYMlXi/view?usp=sharing)
 
 ![Screenshot_20250514_125409](https://github.com/user-attachments/assets/545a8783-baff-4fa6-bdbb-946bb8ad1b17)
 
