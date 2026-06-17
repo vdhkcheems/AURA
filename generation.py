@@ -15,7 +15,7 @@ papers_str = ", ".join(papers)
 
 # Configure Gemini
 genai.configure(api_key=api_key)
-model = genai.GenerativeModel("gemini-2.0-flash")
+model = genai.GenerativeModel("gemini-2.5-flash")
 
 # --- 🧠 Query Classifier ---
 def classify_query(query, model):
