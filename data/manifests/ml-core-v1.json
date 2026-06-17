@@ -1,0 +1,148 @@
+{
+  "corpus_id": "ml-core-v1",
+  "name": "Machine Learning Core Papers v1",
+  "description": "Initial curated machine learning and AI research corpus for AURA's migration from a single-paper prototype to a deployable multi-paper RAG system.",
+  "status": "planned",
+  "source_policy": {
+    "preferred_source": "arxiv_latex",
+    "fallback_source": "pdf",
+    "notes": "Prefer arXiv source archives because LaTeX structure is easier to parse into section-aware chunks."
+  },
+  "embedding_policy": {
+    "initial_model": "BAAI/bge-base-en-v1.5",
+    "vector_database": "qdrant",
+    "distance": "cosine"
+  },
+  "papers": [
+    {
+      "id": "attention-is-all-you-need",
+      "title": "Attention Is All You Need",
+      "authors": [
+        "Ashish Vaswani",
+        "Noam Shazeer",
+        "Niki Parmar",
+        "Jakob Uszkoreit",
+        "Llion Jones",
+        "Aidan N. Gomez",
+        "Lukasz Kaiser",
+        "Illia Polosukhin"
+      ],
+      "year": 2017,
+      "arxiv_id": "1706.03762",
+      "topics": ["transformers", "attention", "sequence-modeling"],
+      "priority": 1,
+      "source_preference": "arxiv_latex",
+      "status": "already_indexed_legacy"
+    },
+    {
+      "id": "bert",
+      "title": "BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding",
+      "authors": ["Jacob Devlin", "Ming-Wei Chang", "Kenton Lee", "Kristina Toutanova"],
+      "year": 2018,
+      "arxiv_id": "1810.04805",
+      "topics": ["transformers", "language-modeling", "representation-learning"],
+      "priority": 1,
+      "source_preference": "arxiv_latex",
+      "status": "planned"
+    },
+    {
+      "id": "gpt-3",
+      "title": "Language Models are Few-Shot Learners",
+      "authors": ["Tom B. Brown et al."],
+      "year": 2020,
+      "arxiv_id": "2005.14165",
+      "topics": ["language-modeling", "few-shot-learning", "scaling"],
+      "priority": 1,
+      "source_preference": "arxiv_latex",
+      "status": "planned"
+    },
+    {
+      "id": "adam",
+      "title": "Adam: A Method for Stochastic Optimization",
+      "authors": ["Diederik P. Kingma", "Jimmy Ba"],
+      "year": 2014,
+      "arxiv_id": "1412.6980",
+      "topics": ["optimization", "training"],
+      "priority": 1,
+      "source_preference": "arxiv_latex",
+      "status": "planned"
+    },
+    {
+      "id": "batch-normalization",
+      "title": "Batch Normalization: Accelerating Deep Network Training by Reducing Internal Covariate Shift",
+      "authors": ["Sergey Ioffe", "Christian Szegedy"],
+      "year": 2015,
+      "arxiv_id": "1502.03167",
+      "topics": ["optimization", "normalization", "training"],
+      "priority": 1,
+      "source_preference": "arxiv_latex",
+      "status": "planned"
+    },
+    {
+      "id": "dropout",
+      "title": "Improving neural networks by preventing co-adaptation of feature detectors",
+      "authors": ["Geoffrey E. Hinton", "Nitish Srivastava", "Alex Krizhevsky", "Ilya Sutskever", "Ruslan Salakhutdinov"],
+      "year": 2012,
+      "arxiv_id": "1207.0580",
+      "topics": ["regularization", "training"],
+      "priority": 2,
+      "source_preference": "arxiv_latex",
+      "status": "planned"
+    },
+    {
+      "id": "resnet",
+      "title": "Deep Residual Learning for Image Recognition",
+      "authors": ["Kaiming He", "Xiangyu Zhang", "Shaoqing Ren", "Jian Sun"],
+      "year": 2015,
+      "arxiv_id": "1512.03385",
+      "topics": ["computer-vision", "residual-networks", "deep-learning"],
+      "priority": 1,
+      "source_preference": "arxiv_latex",
+      "status": "planned"
+    },
+    {
+      "id": "clip",
+      "title": "Learning Transferable Visual Models From Natural Language Supervision",
+      "authors": ["Alec Radford et al."],
+      "year": 2021,
+      "arxiv_id": "2103.00020",
+      "topics": ["multimodal-learning", "contrastive-learning", "vision-language"],
+      "priority": 1,
+      "source_preference": "arxiv_latex",
+      "status": "planned"
+    },
+    {
+      "id": "ddpm",
+      "title": "Denoising Diffusion Probabilistic Models",
+      "authors": ["Jonathan Ho", "Ajay Jain", "Pieter Abbeel"],
+      "year": 2020,
+      "arxiv_id": "2006.11239",
+      "topics": ["diffusion-models", "generative-modeling"],
+      "priority": 1,
+      "source_preference": "arxiv_latex",
+      "status": "planned"
+    },
+    {
+      "id": "rag",
+      "title": "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks",
+      "authors": ["Patrick Lewis et al."],
+      "year": 2020,
+      "arxiv_id": "2005.11401",
+      "topics": ["retrieval-augmented-generation", "retrieval", "language-modeling"],
+      "priority": 1,
+      "source_preference": "arxiv_latex",
+      "status": "planned"
+    },
+    {
+      "id": "dense-passage-retrieval",
+      "title": "Dense Passage Retrieval for Open-Domain Question Answering",
+      "authors": ["Vladimir Karpukhin et al."],
+      "year": 2020,
+      "arxiv_id": "2004.04906",
+      "topics": ["retrieval", "question-answering", "dense-retrieval"],
+      "priority": 2,
+      "source_preference": "arxiv_latex",
+      "status": "planned"
+    }
+  ]
+}
