@@ -20,3 +20,29 @@ Validate the curated corpus manifest before using it for ingestion:
 ```bash
 python3 -m services.rag.aura_rag.manifest data/manifests/ml-core-v1.json
 ```
+
+## Source acquisition
+
+Inspect the arXiv source downloads without writing files:
+
+```bash
+python3 -m services.rag.aura_rag.acquire_sources data/manifests/ml-core-v1.json --dry-run
+```
+
+Download the planned papers after confirming the list:
+
+```bash
+python3 -m services.rag.aura_rag.acquire_sources data/manifests/ml-core-v1.json
+```
+
+Archives and acquisition records are stored under `data/raw/<corpus-id>/<paper-id>/` and are intentionally ignored by Git. The command validates that each downloaded archive is readable and includes at least one `.tex` file. Use `--include-legacy` to fetch the original prototype paper as well.
+
+## Source inspection
+
+Inspect each acquired archive, resolve its LaTeX include tree, and write JSON reports:
+
+```bash
+python3 -m services.rag.aura_rag.inspect_sources data/manifests/ml-core-v1.json
+```
+
+Each report is written to `data/processed/<corpus-id>/<paper-id>/inspection.json`. It identifies the root document, resolved source files, missing or cyclic includes, section counts, and PDF-wrapper sources that require a later fallback. These generated reports are intentionally ignored by Git.
