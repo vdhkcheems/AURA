@@ -1,113 +1,102 @@
-# 📄 AURA – Artificial Understanding of Research Articles
+# AURA
 
-**AURA** is an intelligent AI assistant that helps users effortlessly understand complex research papers using natural language questions. It leverages **RAG (Retrieval-Augmented Generation)** architecture and is powered by **Google Gemini** to deliver highly relevant and precise answers grounded in the research context.
+Artificial Understanding of Research Articles is a research-paper question-answering project. It is evolving from a single-paper Streamlit prototype into a deployable, multi-paper RAG application.
 
-> Ask AURA about papers it has access to, and it will fetch and summarize the most relevant sections. Ask it anything else, and it becomes a conversational agent like any smart chatbot!
+## Project Status
 
----
+The repository currently contains two tracks:
 
-## 🌟 Overview
+- **Legacy prototype:** a Streamlit application backed by Gemini, Sentence Transformers, and a local FAISS index for one paper, "Attention Is All You Need."
+- **Migration in progress:** a curated machine-learning corpus pipeline that will become the backend foundation for a Next.js web application and Qdrant vector search.
 
-AURA (Artificial Understanding of Research Articles) is designed to make reading academic papers less daunting. It’s an **agentic, dual-behavior AI** system that:
-- Uses **RAG-based document retrieval** to ground answers in the original text.
-- Switches between **RAG Mode** and **Normal Mode** based on the query type.
-- Offers an intuitive, chat-style interface with clean UI and structured responses.
+The Streamlit app remains available for reference while the new architecture is built in small, verified stages. It is not the intended long-term deployment path.
 
-Whether you're a researcher, student, or enthusiast, AURA can help you:
-- Understand key points of a paper.
-- Ask detailed questions about methodology, results, or assumptions.
-- Get quick and trustworthy responses grounded in actual content.
+## Migration Progress
 
----
+The first corpus-building stage is complete:
 
-## ⚙️ Features
+- A validated manifest defines the initial 11-paper machine-learning corpus.
+- Ten planned arXiv source archives have been acquired and checked for LaTeX content.
+- Source inspection resolves LaTeX `\\input` and `\\include` trees and emits structured reports.
+- Nine papers are ready for LaTeX text normalization.
+- "Adam: A Method for Stochastic Optimization" is correctly identified as a PDF-wrapper source and will use the PDF fallback path later.
 
-### 🧠 Dual-Mode Intelligence
-- **RAG Route**: Retrieves relevant chunks from research papers and generates grounded answers.
-- **Normal Route**: Behaves like a typical Gemini-powered conversational assistant when queries aren't paper-specific.
+The next stage is normalizing the nine LaTeX sources into section-aware text, followed by chunking, embeddings, Qdrant indexing, and the new web/API layer.
 
-### 🔍 Intelligent Retrieval
-- Uses **FAISS** for semantic similarity search.
-- Dynamically fetches top-k relevant sections from parsed papers based on user input.
+For the detailed roadmap, see [docs/improvement_plan.md](docs/improvement_plan.md).
 
-### 📄 Paper Metadata Awareness
-- Each RAG response includes citations of the paper and section (heading) it used for transparency.
+## Repository Layout
 
-### 🗂️ Organized Architecture
-- Modular file structure separating:
-  - Retrieval logic (`query_rag.py`)
-  - Generation & classification logic (`generation.py`)
-  - Streamlit frontend (`app.py`)
-
-### 💬 Beautiful Chat UI
-- Custom styled chat bubbles using HTML + CSS inside Streamlit.
-- Distinct user and bot messages with proper alignment and colors.
-
----
-
-## 🚀 How to Use
-
-### 🔗 Use Online
-
-Try the live demo (hosted on [Streamlit Community Cloud](https://share.streamlit.io/)):
-
-> **[🌐 Launch AURA](https://aura-vdhkcheems.streamlit.app/)**
-
-
----
-
-### 💻 Run Locally
-
-#### 1. Clone the repository
-```bash
-git clone https://github.com/your-username/aura.git
-cd aura
+```text
+app.py, generation.py, query_rag.py  Legacy Streamlit prototype
+data/manifests/                      Versioned corpus definitions
+data/raw/                            Downloaded source archives (generated, ignored)
+data/processed/                      Inspection and normalized outputs (generated, ignored)
+services/rag/                        Python corpus processing and retrieval code
+apps/web/                            Reserved for the Next.js application
+packages/shared/                     Reserved for shared TypeScript contracts
+infra/                               Deployment and infrastructure configuration
 ```
 
-#### 2. Create and activate a virtual environment (optional but recommended)
+## Working With The Corpus
+
+The corpus tooling uses only the Python standard library at this stage.
+
+Validate the manifest:
+
 ```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+python3 -m services.rag.aura_rag.manifest data/manifests/ml-core-v1.json
 ```
 
-#### 3. Install dependencies
+Preview the planned arXiv source downloads:
+
 ```bash
+python3 -m services.rag.aura_rag.acquire_sources data/manifests/ml-core-v1.json --dry-run
+```
+
+Acquire the planned source archives:
+
+```bash
+python3 -m services.rag.aura_rag.acquire_sources data/manifests/ml-core-v1.json
+```
+
+Inspect the acquired LaTeX document trees:
+
+```bash
+python3 -m services.rag.aura_rag.inspect_sources data/manifests/ml-core-v1.json
+```
+
+Inspection reports are written to `data/processed/ml-core-v1/<paper-id>/inspection.json`. Source archives and generated reports are intentionally not committed to Git.
+
+## Legacy Streamlit Prototype
+
+The existing prototype requires a Gemini API key and the Python dependencies listed in `requirements.txt`.
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-#### 4. Add your Google Gemini API credentials
-Make a .env file and add the gemini key as 'GEMINI_API_KEY'
+Set `GEMINI_API_KEY` in `.env`, then run:
 
-#### 5. Run
 ```bash
 streamlit run app.py
 ```
 
----
+This path is legacy and may require a Python version supported by its native ML dependencies. It is separate from the new corpus pipeline.
 
-### 🚧 Future Improvements
+## Target Architecture
 
-Here are a few planned upgrades to AURA:
+The intended production system separates responsibilities cleanly:
 
-- **In-app upload**: Let users upload their own PDFs and instantly ask questions about them.
-- **Source highlighting**: Show exactly which chunks from the paper were used to generate the answer.
-- **Conversation memory**: Persist chat history between sessions and improve context handling.
-- **UI Enhancements**: Improve chat interface responsiveness and add dark/light mode toggle.
-- **Model selection**: Option to switch between Gemini, GPT, or local open-source LLMs.
-- **Analytics Dashboard**: Track user queries, paper usage, and model response performance.
+- A Next.js frontend deployed on Vercel.
+- An API layer for chat and retrieval requests.
+- Python services for offline source processing, normalization, chunking, and indexing.
+- Qdrant for persistent vector storage and metadata filtering.
 
----
+User paper uploads and asynchronous processing jobs are planned after the curated corpus ingestion flow is reliable.
 
-### 🔗 [Demo](https://drive.google.com/file/d/1dSJ_Q62LESS9cQHTNSxzuDWu-gqYMlXi/view?usp=sharing)
+## Contributing
 
-![Screenshot_20250514_125409](https://github.com/user-attachments/assets/545a8783-baff-4fa6-bdbb-946bb8ad1b17)
-
-
-![Screenshot_20250514_125437](https://github.com/user-attachments/assets/e025a650-3fe9-465f-9d2b-196a2cacc812)
-
-
-
-### 🤝 Contributing
-
-Pull requests are welcome! For major changes, please open an issue first to discuss what you’d like to change.
-
+Keep generated corpus data out of version control, validate the manifest before ingestion, and add focused tests for new processing behavior. The migration plan is deliberately incremental so each corpus stage can be inspected before the next one begins.
