@@ -48,11 +48,12 @@ Each record has this shape:
 ```
 
 `chunk_id` is immutable once written. The middle component is the normalized section ID and the final component is a zero-padded ordinal within that section.
+`block_range.start` is inclusive and `block_range.end` is exclusive.
 
 ## Chunking Rules
 
 1. Chunk within a normalized section; do not join unrelated section paths.
-2. Accumulate whole blocks in reading order. Do not split an equation or caption.
+2. Accumulate blocks in reading order. Do not split an equation or caption; split a paragraph only when it alone exceeds the maximum, preferring sentence and then whitespace boundaries.
 3. Target 1,600–2,400 characters of textual content. A chunk may reach 3,200 characters when splitting would detach a short explanation from its equation, caption, or list.
 4. Merge a trailing chunk shorter than 400 characters into its predecessor when both belong to the same section and the combined chunk stays below the maximum.
 5. Add up to 250 characters of overlap using complete preceding paragraph blocks. Never duplicate equations or captions solely to create overlap.

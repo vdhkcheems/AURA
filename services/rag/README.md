@@ -56,3 +56,13 @@ python3 -m services.rag.aura_rag.normalize_sources data/manifests/ml-core-v1.jso
 ```
 
 Each output is written to `data/processed/<corpus-id>/<paper-id>/normalized.json`. The normalizer preserves section hierarchy, prose, display equations, figure/table captions, and source-file provenance. It skips PDF-wrapper papers such as Adam and reports them as pending a future PDF fallback.
+
+## Chunk generation
+
+Create section-aware retrieval chunks from every normalized document available in the manifest:
+
+```bash
+python3 -m services.rag.aura_rag.chunk_sources data/manifests/ml-core-v1.json
+```
+
+The command writes `data/processed/<corpus-id>/chunks.jsonl`. Chunks retain section paths, source files, block ranges, equations, captions, and a reserved `related_figure_ids` field for the future figure evidence layer.
