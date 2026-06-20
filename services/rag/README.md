@@ -46,3 +46,13 @@ python3 -m services.rag.aura_rag.inspect_sources data/manifests/ml-core-v1.json
 ```
 
 Each report is written to `data/processed/<corpus-id>/<paper-id>/inspection.json`. It identifies the root document, resolved source files, missing or cyclic includes, section counts, and PDF-wrapper sources that require a later fallback. These generated reports are intentionally ignored by Git.
+
+## Source normalization
+
+Normalize the extractable LaTeX papers into section-aware JSON documents:
+
+```bash
+python3 -m services.rag.aura_rag.normalize_sources data/manifests/ml-core-v1.json
+```
+
+Each output is written to `data/processed/<corpus-id>/<paper-id>/normalized.json`. The normalizer preserves section hierarchy, prose, display equations, figure/table captions, and source-file provenance. It skips PDF-wrapper papers such as Adam and reports them as pending a future PDF fallback.

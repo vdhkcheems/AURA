@@ -270,6 +270,13 @@ Chunking priorities:
    - Section path.
    - Token or character count.
    - Source line or approximate location, when available.
+   - Related figure IDs, when a chunk contains, cites, or immediately explains a figure.
+
+5. Preserve figure relationships during normalization and chunking.
+   - Capture figure labels, captions, source files, and `\includegraphics` asset references.
+   - Keep original assets immutable under raw source storage.
+   - Reserve stable figure IDs that can later connect chunks, rendered assets, and figure retrieval results.
+   - Do not discard a figure relationship merely because the first text-only RAG release does not render images.
 
 Recommended first strategy:
 
@@ -303,6 +310,44 @@ Deliverable:
 - A first version of the section-aware chunking approach.
 - Chunks generated for the expanded corpus.
 
+## Phase 4.5: Add a Figure Evidence Layer
+
+Goal: Make diagrams, plots, qualitative results, and other useful paper figures available as source-grounded visual evidence without mixing image bytes into the text RAG index.
+
+Approach:
+
+1. Extract figure metadata from LaTeX.
+   - Figure label, caption, paper ID, section path, source file, and nearby text references.
+   - Resolve `\includegraphics` paths against the arXiv source archive.
+   - Record figures generated from LaTeX/TikZ separately for a later rendering adapter.
+
+2. Produce browser-ready assets.
+   - Retain the source asset unchanged.
+   - Copy or optimize PNG/JPEG assets.
+   - Render PDF/EPS source figures to PNG or WebP.
+   - Use a PDF-page extraction fallback only when source assets are unavailable.
+
+3. Generate and index visual descriptions.
+   - Build a description from the caption, nearby paper text, and a vision-capable model when available.
+   - Index figure records separately from text chunks using title, section path, caption, generated description, and text references.
+   - Store asset keys and metadata in the vector database; store image bytes in object storage rather than Qdrant.
+
+4. Retrieve figures as connected evidence.
+   - First retrieve text chunks normally.
+   - Prefer figures directly linked to those chunks or explicitly referenced by them.
+   - Optionally query the figure-description index and rerank candidates.
+   - Let the response layer show a figure only when it clears a relevance threshold or the user explicitly asks for one.
+
+5. Display figures in the web app.
+   - Show a "Helpful figure" card with the rendered image, caption, paper/section attribution, and a concise explanation.
+   - Keep the image optional and expandable so it supports the answer rather than interrupting it.
+
+Deliverable:
+
+- A separate, source-grounded figure record format and asset pipeline.
+- Figure metadata linked to text chunks.
+- Retrieval and UI support for displaying relevant visual evidence.
+
 ## Phase 5: Move from Local FAISS to Qdrant
 
 Goal: Make retrieval deployable and independent of local files.
@@ -322,6 +367,7 @@ Steps:
    - Embed the user query.
    - Query Qdrant.
    - Return top-k chunks and metadata.
+   - Keep text-chunk and figure-description retrieval as separate collections or payload namespaces, joined by stable paper/chunk/figure IDs.
 
 4. Add local development support.
    - Use Docker Compose for local Qdrant.
@@ -348,6 +394,7 @@ Core screens:
    - Ask questions.
    - Display generated answers.
    - Display cited sources.
+   - Display an optional, relevance-ranked "Helpful figure" when visual evidence materially improves the answer.
    - Show whether retrieval was used.
 
 2. Paper library screen.
@@ -389,6 +436,7 @@ Chat flow:
    - Embed query.
    - Query Qdrant.
    - Build context from retrieved chunks.
+   - Retrieve linked or semantically relevant figure candidates when the answer could benefit from visual evidence.
    - Generate grounded response.
 4. If retrieval is not needed:
    - Generate normal assistant response or politely steer back to research help.
@@ -416,6 +464,7 @@ Deliverable:
 
 - Stable chat API.
 - Source-aware response contract.
+- Optional figure evidence contract.
 - Frontend connected to real retrieval and generation.
 
 ## Phase 8: Deployment Setup
@@ -526,6 +575,13 @@ Deliverable:
 - Query Qdrant from a script.
 - Validate retrieval quality.
 
+### Milestone 3.5: Figure Evidence Foundation
+
+- Preserve figure metadata and chunk-to-figure links.
+- Render directly referenced source assets into web-ready derivatives.
+- Build a separate figure-description index.
+- Validate that figures shown in answers are relevant and correctly attributed.
+
 ### Milestone 4: Next.js App v1
 
 - Build chat UI.
@@ -555,6 +611,7 @@ Deliverable:
 4. Define the first corpus manifest schema.
 5. Create a small evaluation question set from the existing paper.
 6. Start the migration only after these decisions are written down.
+7. Define a chunking and figure-linkage contract before implementing the chunker.
 
 ## Open Decisions
 
@@ -564,6 +621,8 @@ Deliverable:
 4. Should the first deployed app support global chat across all papers, paper-scoped chat, or both?
 5. Should Qdrant payloads store full chunk text, or should chunk text live in separate storage with Qdrant storing references?
 6. What is the expected public usage level, and does the first deployment need rate limiting?
+7. Which object storage provider should hold rendered figure assets in production?
+8. Should vision-generated figure descriptions be produced during offline ingestion or on demand?
 
 ## Definition of Success
 
