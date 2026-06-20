@@ -13,15 +13,17 @@ The Streamlit app remains available for reference while the new architecture is 
 
 ## Migration Progress
 
-The first corpus-building stage is complete:
+The curated-corpus foundation is complete and ready for vector indexing:
 
-- A validated manifest defines the initial 11-paper machine-learning corpus.
-- Ten planned arXiv source archives have been acquired and checked for LaTeX content.
-- Source inspection resolves LaTeX `\\input` and `\\include` trees and emits structured reports.
-- Nine papers are ready for LaTeX text normalization.
-- "Adam: A Method for Stochastic Optimization" is correctly identified as a PDF-wrapper source and will use the PDF fallback path later.
+- A validated manifest defines an initial 11-paper machine-learning corpus.
+- All 11 arXiv source archives have been acquired and inspected.
+- Ten papers, including *Attention Is All You Need*, have extractable LaTeX source trees with no unresolved or cyclic includes.
+- The ten extractable papers have been normalized into section-aware documents that retain prose, equations, captions, and source-file provenance.
+- Those documents have been split into 440 section-aware retrieval chunks with stable IDs, section paths, block ranges, and reserved figure-linkage fields.
+- The chunking and future figure-linkage contract is documented in [docs/chunking_and_figure_contract.md](docs/chunking_and_figure_contract.md).
+- "Adam: A Method for Stochastic Optimization" is a PDF-wrapper source and remains pending a separate PDF fallback path.
 
-The next stage is normalizing the nine LaTeX sources into section-aware text, followed by chunking, embeddings, Qdrant indexing, and the new web/API layer.
+The next stage is embedding the chunks, indexing them in local Qdrant, and validating retrieval quality before building the web/API layer. Figure rendering and visual-evidence retrieval are planned after the text retrieval foundation is reliable.
 
 For the detailed roadmap, see [docs/improvement_plan.md](docs/improvement_plan.md).
 
@@ -31,7 +33,7 @@ For the detailed roadmap, see [docs/improvement_plan.md](docs/improvement_plan.m
 app.py, generation.py, query_rag.py  Legacy Streamlit prototype
 data/manifests/                      Versioned corpus definitions
 data/raw/                            Downloaded source archives (generated, ignored)
-data/processed/                      Inspection and normalized outputs (generated, ignored)
+data/processed/                      Inspection, normalized, and chunk outputs (generated, ignored)
 services/rag/                        Python corpus processing and retrieval code
 apps/web/                            Reserved for the Next.js application
 packages/shared/                     Reserved for shared TypeScript contracts
@@ -40,7 +42,7 @@ infra/                               Deployment and infrastructure configuration
 
 ## Working With The Corpus
 
-The corpus tooling uses only the Python standard library at this stage.
+The manifest, acquisition, inspection, normalization, and chunking tooling uses only the Python standard library at this stage.
 
 Validate the manifest:
 
@@ -54,19 +56,31 @@ Preview the planned arXiv source downloads:
 python3 -m services.rag.aura_rag.acquire_sources data/manifests/ml-core-v1.json --dry-run
 ```
 
-Acquire the planned source archives:
+Acquire the complete source corpus, including the legacy prototype paper:
 
 ```bash
-python3 -m services.rag.aura_rag.acquire_sources data/manifests/ml-core-v1.json
+python3 -m services.rag.aura_rag.acquire_sources data/manifests/ml-core-v1.json --include-legacy
 ```
 
 Inspect the acquired LaTeX document trees:
 
 ```bash
-python3 -m services.rag.aura_rag.inspect_sources data/manifests/ml-core-v1.json
+python3 -m services.rag.aura_rag.inspect_sources data/manifests/ml-core-v1.json --include-legacy
 ```
 
-Inspection reports are written to `data/processed/ml-core-v1/<paper-id>/inspection.json`. Source archives and generated reports are intentionally not committed to Git.
+Normalize the extractable LaTeX papers:
+
+```bash
+python3 -m services.rag.aura_rag.normalize_sources data/manifests/ml-core-v1.json --include-legacy
+```
+
+Generate section-aware retrieval chunks:
+
+```bash
+python3 -m services.rag.aura_rag.chunk_sources data/manifests/ml-core-v1.json
+```
+
+Inspection reports are written to `data/processed/ml-core-v1/<paper-id>/inspection.json`, normalized documents to `data/processed/ml-core-v1/<paper-id>/normalized.json`, and the corpus chunk file to `data/processed/ml-core-v1/chunks.jsonl`. Source archives and generated outputs are intentionally not committed to Git.
 
 ## Legacy Streamlit Prototype
 
