@@ -25,7 +25,11 @@ The curated-corpus and text-retrieval foundation is complete:
 - The initial 21-case paper-level retrieval evaluation achieved 21/21 hits at top 5. It is a smoke-test baseline, not a substitute for a larger relevance evaluation.
 - "Adam: A Method for Stochastic Optimization" is a PDF-wrapper source and remains pending a separate PDF fallback path.
 
-The next stage is the server-side chat/retrieval API and Next.js web experience. Figure rendering and visual-evidence retrieval are planned after the text retrieval foundation is reliable.
+The server-side chat/retrieval API is now implemented in the Next.js web app.
+The next stage is wiring it to an interactive chat interface, adding durable rate
+limiting, and deploying it with server-side Vercel environment variables. Figure
+rendering and visual-evidence retrieval remain planned after the text retrieval
+foundation is reliable.
 
 The indexing utility is now available for a hosted Gemini/Qdrant text index. See
 [docs/embedding_and_indexing.md](docs/embedding_and_indexing.md) for setup and
@@ -41,7 +45,7 @@ data/manifests/                      Versioned corpus definitions
 data/raw/                            Downloaded source archives (generated, ignored)
 data/processed/                      Inspection, normalized, and chunk outputs (generated, ignored)
 services/rag/                        Python corpus processing and retrieval code
-apps/web/                            Reserved for the Next.js application
+apps/web/                            Next.js app and server-side chat/health API routes
 packages/shared/                     Reserved for shared TypeScript contracts
 infra/                               Deployment and infrastructure configuration
 ```
