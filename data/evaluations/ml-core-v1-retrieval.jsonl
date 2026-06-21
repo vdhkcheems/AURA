@@ -1,0 +1,21 @@
+{"id":"aiayn-self-attention","question":"How does self-attention let the Transformer relate tokens in a sequence?","expected_paper_ids":["attention-is-all-you-need"]}
+{"id":"aiayn-positional-encoding","question":"Why does the Transformer use positional encodings?","expected_paper_ids":["attention-is-all-you-need"]}
+{"id":"bert-pretraining","question":"What are the pre-training objectives used by BERT?","expected_paper_ids":["bert"]}
+{"id":"bert-bidirectional","question":"What does bidirectional context mean in BERT?","expected_paper_ids":["bert"]}
+{"id":"gpt3-few-shot","question":"How does GPT-3 perform few-shot learning from prompts?","expected_paper_ids":["gpt-3"]}
+{"id":"gpt3-scaling","question":"What relationship does the GPT-3 paper study between model scale and language-model performance?","expected_paper_ids":["gpt-3"]}
+{"id":"batchnorm-method","question":"How does batch normalization normalize layer activations during training?","expected_paper_ids":["batch-normalization"]}
+{"id":"batchnorm-benefit","question":"What training problem does batch normalization aim to reduce?","expected_paper_ids":["batch-normalization"]}
+{"id":"dropout-method","question":"How does dropout prevent co-adaptation of feature detectors?","expected_paper_ids":["dropout"]}
+{"id":"dropout-inference","question":"How is a dropout-trained neural network used at test time?","expected_paper_ids":["dropout"]}
+{"id":"resnet-shortcuts","question":"Why do residual networks use shortcut connections?","expected_paper_ids":["resnet"]}
+{"id":"resnet-degradation","question":"What is the degradation problem studied in deep residual learning?","expected_paper_ids":["resnet"]}
+{"id":"clip-contrastive","question":"How does CLIP learn from image and text pairs?","expected_paper_ids":["clip"]}
+{"id":"clip-zero-shot","question":"How does CLIP support zero-shot image classification?","expected_paper_ids":["clip"]}
+{"id":"ddpm-process","question":"What are the forward and reverse processes in denoising diffusion probabilistic models?","expected_paper_ids":["ddpm"]}
+{"id":"ddpm-objective","question":"What does the DDPM training objective ask the model to predict?","expected_paper_ids":["ddpm"]}
+{"id":"rag-memory","question":"How does retrieval-augmented generation combine parametric and non-parametric memory?","expected_paper_ids":["rag"]}
+{"id":"rag-models","question":"What is the difference between RAG-Sequence and RAG-Token?","expected_paper_ids":["rag"]}
+{"id":"dpr-representation","question":"How does Dense Passage Retrieval represent questions and passages?","expected_paper_ids":["dense-passage-retrieval"]}
+{"id":"dpr-training","question":"How are positive and negative passages used to train Dense Passage Retrieval?","expected_paper_ids":["dense-passage-retrieval"]}
+{"id":"cross-paper-retrieval","question":"How does Dense Passage Retrieval relate to retrieval-augmented generation systems?","expected_paper_ids":["dense-passage-retrieval","rag"]}

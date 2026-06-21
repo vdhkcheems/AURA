@@ -1,0 +1,4 @@
+# Dependencies for the hosted Gemini/Qdrant indexing and retrieval utilities.
+google-genai>=1.0.0
+qdrant-client>=1.13.0
+python-dotenv>=1.0.0

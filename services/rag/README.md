@@ -13,6 +13,33 @@ The planned responsibilities are:
 
 For the first migration stage, this is intentionally separate from the web app. User uploads and live processing jobs are deferred until the curated corpus flow is reliable.
 
+## Gemini and Qdrant indexing
+
+The text index uses Gemini embeddings and Qdrant Cloud. The current deployed
+index is `aura_text_ml_core_v1_gemini_embedding_001_v1`: 451 chunks, Gemini
+`gemini-embedding-001` at 768 dimensions, cosine similarity, and full chunk
+provenance in the Qdrant payload. The shipped 21-case paper-level smoke test
+retrieved every expected paper in the top five results.
+
+Install the service-only dependencies, validate the existing generated chunks,
+then run an idempotent index upsert after setting `GEMINI_API_KEY`, `QDRANT_URL`,
+and `QDRANT_API_KEY` in the root `.env` file:
+
+```bash
+pip install -r services/rag/requirements.txt
+python3 -m services.rag.aura_rag.index_qdrant --dry-run
+python3 -m services.rag.aura_rag.index_qdrant
+python3 -m services.rag.aura_rag.retrieve_qdrant "How does self-attention work?"
+python3 -m services.rag.aura_rag.evaluate_retrieval
+```
+
+The indexer batches six chunks and backs off automatically after Gemini `429`
+responses, which keeps initial indexing compatible with the free-tier rolling
+token quota. Re-running it upserts the same stable point IDs safely.
+
+See [the indexing guide](../../docs/embedding_and_indexing.md) for Qdrant setup,
+collection conventions, filters, and deployment boundaries.
+
 ## Manifest validation
 
 Validate the curated corpus manifest before using it for ingestion:

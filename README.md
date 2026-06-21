@@ -13,7 +13,7 @@ The Streamlit app remains available for reference while the new architecture is 
 
 ## Migration Progress
 
-The curated-corpus foundation is complete and ready for vector indexing:
+The curated-corpus and text-retrieval foundation is complete:
 
 - A validated manifest defines an initial 11-paper machine-learning corpus.
 - All 11 arXiv source archives have been acquired and inspected.
@@ -21,9 +21,15 @@ The curated-corpus foundation is complete and ready for vector indexing:
 - The ten extractable papers have been normalized into section-aware documents that retain prose, equations, captions, and source-file provenance.
 - Those documents are split into section-aware retrieval chunks with stable IDs, section paths, block ranges, and reserved figure-linkage fields.
 - The chunking and future figure-linkage contract is documented in [docs/chunking_and_figure_contract.md](docs/chunking_and_figure_contract.md).
+- All 451 chunks from the ten extractable papers are embedded with Gemini (`gemini-embedding-001`, 768 dimensions) and indexed in the versioned Qdrant collection `aura_text_ml_core_v1_gemini_embedding_001_v1`.
+- The initial 21-case paper-level retrieval evaluation achieved 21/21 hits at top 5. It is a smoke-test baseline, not a substitute for a larger relevance evaluation.
 - "Adam: A Method for Stochastic Optimization" is a PDF-wrapper source and remains pending a separate PDF fallback path.
 
-The next stage is embedding the chunks, indexing them in local Qdrant, and validating retrieval quality before building the web/API layer. Figure rendering and visual-evidence retrieval are planned after the text retrieval foundation is reliable.
+The next stage is the server-side chat/retrieval API and Next.js web experience. Figure rendering and visual-evidence retrieval are planned after the text retrieval foundation is reliable.
+
+The indexing utility is now available for a hosted Gemini/Qdrant text index. See
+[docs/embedding_and_indexing.md](docs/embedding_and_indexing.md) for setup and
+the required Qdrant Cloud environment variables.
 
 For the detailed roadmap, see [docs/improvement_plan.md](docs/improvement_plan.md).
 
