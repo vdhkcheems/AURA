@@ -19,7 +19,7 @@ The curated-corpus foundation is complete and ready for vector indexing:
 - All 11 arXiv source archives have been acquired and inspected.
 - Ten papers, including *Attention Is All You Need*, have extractable LaTeX source trees with no unresolved or cyclic includes.
 - The ten extractable papers have been normalized into section-aware documents that retain prose, equations, captions, and source-file provenance.
-- Those documents have been split into 440 section-aware retrieval chunks with stable IDs, section paths, block ranges, and reserved figure-linkage fields.
+- Those documents are split into section-aware retrieval chunks with stable IDs, section paths, block ranges, and reserved figure-linkage fields.
 - The chunking and future figure-linkage contract is documented in [docs/chunking_and_figure_contract.md](docs/chunking_and_figure_contract.md).
 - "Adam: A Method for Stochastic Optimization" is a PDF-wrapper source and remains pending a separate PDF fallback path.
 
@@ -40,47 +40,120 @@ packages/shared/                     Reserved for shared TypeScript contracts
 infra/                               Deployment and infrastructure configuration
 ```
 
-## Working With The Corpus
+## Build the Curated Corpus From Scratch
 
-The manifest, acquisition, inspection, normalization, and chunking tooling uses only the Python standard library at this stage.
+The corpus pipeline downloads arXiv source archives, inspects their LaTeX trees,
+normalizes extractable documents, and generates retrieval chunks. It uses only
+the Python standard library; a virtual environment and `pip install` are not
+required for these commands.
 
-Validate the manifest:
+### 1. Clone the repository
+
+```bash
+git clone git@github.com:vdhkcheems/AURA.git
+cd AURA
+```
+
+Use an HTTPS clone URL instead if that is how your GitHub credentials are
+configured.
+
+### 2. Choose the corpus mode
+
+The manifest contains 11 papers:
+
+- **Default mode** processes the 10 papers marked `planned`.
+- **Include legacy mode** also processes *Attention Is All You Need*, the paper
+  retained from the original Streamlit prototype.
+- **Adam** is selected in either mode, but is intentionally skipped during
+  normalization because its arXiv source is a PDF wrapper. Its PDF fallback is
+  not implemented yet.
+
+For a complete 10-paper LaTeX corpus, use `--include-legacy` consistently for
+acquisition, inspection, and normalization. Chunking automatically reads every
+normalized document that exists.
+
+### 3. Validate and preview downloads
+
+Run these from the repository root:
 
 ```bash
 python3 -m services.rag.aura_rag.manifest data/manifests/ml-core-v1.json
+python3 -m services.rag.aura_rag.acquire_sources data/manifests/ml-core-v1.json --dry-run --include-legacy
 ```
 
-Preview the planned arXiv source downloads:
+The preview makes no network requests or file changes.
 
-```bash
-python3 -m services.rag.aura_rag.acquire_sources data/manifests/ml-core-v1.json --dry-run
-```
-
-Acquire the complete source corpus, including the legacy prototype paper:
+### 4. Acquire source archives
 
 ```bash
 python3 -m services.rag.aura_rag.acquire_sources data/manifests/ml-core-v1.json --include-legacy
 ```
 
-Inspect the acquired LaTeX document trees:
+This downloads arXiv source archives to `data/raw/ml-core-v1/<paper-id>/` and
+records acquisition metadata beside each archive.
+
+To omit the legacy paper, remove `--include-legacy` from this and the next two
+commands.
+
+### 5. Inspect the LaTeX source trees
 
 ```bash
 python3 -m services.rag.aura_rag.inspect_sources data/manifests/ml-core-v1.json --include-legacy
 ```
 
-Normalize the extractable LaTeX papers:
+This resolves `\input` and `\include` trees and writes
+`data/processed/ml-core-v1/<paper-id>/inspection.json`. Review these reports if
+a paper is marked for PDF fallback or has unresolved includes.
+
+### 6. Normalize the extractable papers
 
 ```bash
 python3 -m services.rag.aura_rag.normalize_sources data/manifests/ml-core-v1.json --include-legacy
 ```
 
-Generate section-aware retrieval chunks:
+This writes `normalized.json` for each extractable paper. The normalizer retains
+section paths, prose, inline and display LaTeX math, captions, and source-file
+provenance. Adam is reported as skipped until PDF fallback support exists.
+
+### 7. Generate retrieval chunks
 
 ```bash
 python3 -m services.rag.aura_rag.chunk_sources data/manifests/ml-core-v1.json
 ```
 
-Inspection reports are written to `data/processed/ml-core-v1/<paper-id>/inspection.json`, normalized documents to `data/processed/ml-core-v1/<paper-id>/normalized.json`, and the corpus chunk file to `data/processed/ml-core-v1/chunks.jsonl`. Source archives and generated outputs are intentionally not committed to Git.
+This writes the combined corpus file at:
+
+```text
+data/processed/ml-core-v1/chunks.jsonl
+```
+
+Each chunk has a stable ID, paper and section metadata, block range, source-file
+provenance, text, and character count. See
+[docs/chunking_and_figure_contract.md](docs/chunking_and_figure_contract.md) for
+the processed-data contract.
+
+### 8. Verify the pipeline
+
+```bash
+python3 -m unittest discover -s services/rag/tests -v
+python3 -m services.rag.aura_rag.chunk_sources data/manifests/ml-core-v1.json --dry-run
+```
+
+The test suite validates manifest, acquisition, inspection, normalization, and
+chunking behavior. The dry run reports per-paper chunk counts without rewriting
+`chunks.jsonl`.
+
+### Start over with a clean generated corpus
+
+The raw archives and processed artifacts are generated and ignored by Git. To
+delete only this corpus version and rebuild it, run:
+
+```bash
+rm -rf data/raw/ml-core-v1 data/processed/ml-core-v1
+```
+
+Then repeat steps 3–7. This does not delete source code, the manifest, or the
+tracked `.gitkeep` placeholders in `data/raw/` and `data/processed/`.
 
 ## Legacy Streamlit Prototype
 

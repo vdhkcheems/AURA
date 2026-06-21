@@ -69,6 +69,75 @@ $$ F = ma $$
         self.assertEqual(method["blocks"][2], {"type": "equation", "latex": "F = ma", "source_file": "parts/method.tex"})
         self.assertEqual(method["blocks"][3], {"type": "caption", "text": "A useful figure.", "source_file": "parts/method.tex"})
 
+    def test_preserves_inline_dollar_math_verbatim(self) -> None:
+        archive_path = _make_archive(
+            {
+                "main.tex": r"""\documentclass{article}
+\newcommand\modelname{AURA}
+\begin{document}
+\section{Method}
+The score is $\frac{x_i-\mu}{\sigma}$ for $\modelname$ and $x^2$. A bold form is \boldmath$\Theta$.
+\end{document}""",
+            }
+        )
+        self.addCleanup(archive_path.unlink)
+
+        document = LatexNormalizer(archive_path, "main.tex").normalize(MANIFEST, PAPER)
+
+        self.assertEqual(
+            document["sections"][0]["blocks"][0]["text"],
+            r"The score is $\frac{x_i-\mu}{\sigma}$ for $\modelname$ and $x^2$. A bold form is $\Theta$.",
+        )
+        self.assertNotIn("unhandled command: \\frac", document["warnings"])
+        self.assertNotIn("unhandled command: \\modelname", document["warnings"])
+
+    def test_preserves_science_style_abstract_and_sectionless_introduction(self) -> None:
+        archive_path = _make_archive(
+            {
+                "main.tex": r"""\documentclass{article}
+\begin{document}
+\begin{sciabstract}A short abstract with $x_0$.\end{sciabstract}
+Sectionless body prose preserves $2^N$ possible models.
+\begin{scilastnote}Thanks to the reviewers.\end{scilastnote}
+\appendix
+\section{Proofs} Appendix prose.
+\end{document}""",
+            }
+        )
+        self.addCleanup(archive_path.unlink)
+
+        document = LatexNormalizer(archive_path, "main.tex").normalize(MANIFEST, PAPER)
+
+        self.assertEqual(
+            [section["path"] for section in document["sections"]],
+            [["Abstract"], ["Introduction"], ["Acknowledgments"], ["Appendix", "Proofs"]],
+        )
+        self.assertEqual(document["sections"][0]["blocks"][0]["text"], "A short abstract with $x_0$.")
+        self.assertEqual(
+            document["sections"][1]["blocks"][0]["text"],
+            "Sectionless body prose preserves $2^N$ possible models.",
+        )
+        self.assertEqual(document["sections"][2]["blocks"][0]["text"], "Thanks to the reviewers.")
+
+    def test_preserves_caption_text_wrapped_in_font_size_command(self) -> None:
+        archive_path = _make_archive(
+            {
+                "main.tex": r"""\documentclass{article}
+\begin{document}
+\section{Results}
+\begin{figure}\caption{\small{A caption with $x_i$ preserved.}}\end{figure}
+\end{document}""",
+            }
+        )
+        self.addCleanup(archive_path.unlink)
+
+        document = LatexNormalizer(archive_path, "main.tex").normalize(MANIFEST, PAPER)
+
+        self.assertEqual(
+            document["sections"][0]["blocks"],
+            [{"type": "caption", "text": "A caption with $x_i$ preserved.", "source_file": "main.tex"}],
+        )
+
     def test_skips_pdf_fallback_reports(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             root = Path(temporary_directory)

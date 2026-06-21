@@ -34,6 +34,13 @@ DISPLAY_MATH_PATTERN = re.compile(
 )
 CAPTION_PATTERN = re.compile(r"\\caption(?:\[[^]]*\])?\s*\{")
 COMMAND_PATTERN = re.compile(r"\\([A-Za-z@]+)\*?")
+INLINE_DOLLAR_MATH_PATTERN = re.compile(
+    r"(?<![\\$])"  # Not escaped and not the second dollar in display math.
+    r"\$"
+    r"(?:\\[\s\S]|[^$\\])+?"  # Preserve escaped characters verbatim, including newlines.
+    r"(?<!\\)"
+    r"\$"
+)
 MACRO_DEFINITION_PATTERN = re.compile(
     r"\\(?:newcommand|renewcommand|providecommand)\s*(?:\{\\([A-Za-z@]+)\}|\\([A-Za-z@]+))"
     r"(?:\s*\[[^]]*\])?\s*\{([^{}]*)\}"
@@ -155,22 +162,44 @@ class LatexNormalizer:
         stack: list[str] = []
         current: _Section | None = None
         appendix_mode = False
+        pending_sectionless_introduction = False
 
         for source_file, text in _source_segments(expanded):
             cursor = 0
-            event_pattern = re.compile(r"\\appendix\b|\\begin\{abstract\}|\\end\{abstract\}|" + SECTION_PATTERN.pattern)
+            event_pattern = re.compile(
+                r"\\appendix\b|"
+                r"\\begin\{(?:abstract|sciabstract|scilastnote)\}|"
+                r"\\end\{(?:abstract|sciabstract|scilastnote)\}|"
+                + SECTION_PATTERN.pattern
+            )
             for match in event_pattern.finditer(text):
+                preceding_text = text[cursor : match.start()]
                 if current is not None:
-                    self._append_blocks(current, text[cursor : match.start()], source_file)
+                    self._append_blocks(current, preceding_text, source_file)
+                elif pending_sectionless_introduction:
+                    current = self._append_sectionless_introduction(
+                        sections, preceding_text, source_file
+                    )
+                    pending_sectionless_introduction = False
                 token = match.group(0)
                 if token == "\\appendix":
                     appendix_mode = True
                     stack = ["Appendix"]
                     current = None
-                elif token == "\\begin{abstract}":
+                elif token in {"\\begin{abstract}", "\\begin{sciabstract}"}:
                     stack = ["Abstract"]
                     current = self._new_section(sections, stack, 1, source_file)
+                elif token == "\\end{sciabstract}":
+                    current = None
+                    stack = []
+                    pending_sectionless_introduction = True
                 elif token == "\\end{abstract}":
+                    current = None
+                    stack = []
+                elif token == "\\begin{scilastnote}":
+                    stack = ["Acknowledgments"]
+                    current = self._new_section(sections, stack, 1, source_file)
+                elif token == "\\end{scilastnote}":
                     current = None
                     stack = []
                 else:
@@ -186,6 +215,8 @@ class LatexNormalizer:
                 cursor = match.end()
             if current is not None:
                 self._append_blocks(current, text[cursor:], source_file)
+            elif pending_sectionless_introduction:
+                self._append_sectionless_introduction(sections, text[cursor:], source_file)
 
         return [section for section in sections if section.blocks]
 
@@ -195,6 +226,17 @@ class LatexNormalizer:
         section = _Section(f"{len(sections) + 1:03d}", list(path), level, [source_file])
         sections.append(section)
         return section
+
+    def _append_sectionless_introduction(
+        self, sections: list[_Section], text: str, source_file: str
+    ) -> _Section | None:
+        """Keep prose following a Science-style abstract before any section heading."""
+        introduction = self._new_section(sections, ["Introduction"], 1, source_file)
+        self._append_blocks(introduction, text, source_file)
+        if introduction.blocks:
+            return introduction
+        sections.pop()
+        return None
 
     def _append_blocks(self, section: _Section, text: str, source_file: str) -> None:
         block_count_before = len(section.blocks)
@@ -237,6 +279,7 @@ class LatexNormalizer:
                 section.blocks.append({"type": "paragraph", "text": cleaned, "source_file": source_file})
 
     def _clean_inline(self, text: str) -> str:
+        text, inline_math = _protect_inline_dollar_math(text)
         for name, replacement in self.macros.items():
             text = re.sub(rf"\\{re.escape(name)}\b", lambda _match: replacement, text)
         text = re.sub(r"\\(?:bibliography|bibliographystyle)\s*\{[^}]*\}", "", text)
@@ -244,7 +287,24 @@ class LatexNormalizer:
         text = re.sub(r"\\(?:begin|end)\s*\{(?:figure\*?|table\*?|center|itemize|enumerate|tabular\*?|minipage)\}", "", text)
         text = re.sub(r"\\item\b", "- ", text)
         text = re.sub(r"\\includegraphics(?:\[[^]]*\])?\s*\{[^}]*\}", "", text)
-        text = re.sub(r"\\(?:vspace|hspace|hfill|newline|newpage|clearpage|centering|small|footnotesize|scriptsize|large|Large|LARGE)\*?(?:\[[^]]*\])?(?:\{[^}]*\})?", "", text)
+        for _ in range(3):
+            text = re.sub(
+                r"\\(?:small|footnotesize|scriptsize|large|Large|LARGE)\*?"
+                r"(?:\[[^]]*\])?\s*\{([^{}]*)\}",
+                r"\1",
+                text,
+            )
+        text = re.sub(
+            r"\\(?:small|footnotesize|scriptsize|large|Large|LARGE)\*?(?:\[[^]]*\])?",
+            "",
+            text,
+        )
+        text = re.sub(
+            r"\\(?:vspace|hspace|hfill|newline|newpage|clearpage|centering)\*?"
+            r"(?:\[[^]]*\])?(?:\{[^}]*\})?",
+            "",
+            text,
+        )
         text = re.sub(r"\\url\s*\{([^}]*)\}", r"\1", text)
         text = re.sub(r"\\href\s*\{[^}]*\}\s*\{([^}]*)\}", r"\1", text)
         for _ in range(3):
@@ -257,7 +317,10 @@ class LatexNormalizer:
             self.warnings[f"unhandled command: \\{command}"] += 1
         text = re.sub(r"\\[A-Za-z@]+\*?(?:\[[^]]*\])?", "", text)
         text = text.replace("{", "").replace("}", "")
-        return re.sub(r"\s+", " ", text).strip(" -")
+        text = re.sub(r"\s+", " ", text).strip(" -")
+        for index, expression in enumerate(inline_math):
+            text = text.replace(f"\ue000{index}\ue001", expression)
+        return text
 
 
 def normalize_sources(
@@ -314,6 +377,24 @@ def _source_segments(expanded: str) -> list[tuple[str, str]]:
         (match.group(1), expanded[match.end() : matches[index + 1].start() if index + 1 < len(matches) else None])
         for index, match in enumerate(matches)
     ]
+
+
+def _protect_inline_dollar_math(text: str) -> tuple[str, list[str]]:
+    """Replace single-dollar math spans with tokens during prose cleanup.
+
+    Display math is parsed before inline cleaning, and this deliberately skips
+    ``$$...$$`` so it remains the responsibility of ``DISPLAY_MATH_PATTERN``.
+    """
+    expressions: list[str] = []
+
+    def replace(match: re.Match[str]) -> str:
+        # The private-use sentinels cannot be consumed as part of a preceding
+        # LaTeX command (unlike a word-like placeholder beginning with "@").
+        token = f"\ue000{len(expressions)}\ue001"
+        expressions.append(match.group(0))
+        return token
+
+    return INLINE_DOLLAR_MATH_PATTERN.sub(replace, text), expressions
 
 
 def _without_comments(contents: str) -> str:
