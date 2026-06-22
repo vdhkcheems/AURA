@@ -32,7 +32,7 @@
       "topics": ["transformers", "attention", "sequence-modeling"],
       "priority": 1,
       "source_preference": "arxiv_latex",
-      "status": "already_indexed_legacy"
+      "status": "already_indexed"
     },
     {
       "id": "bert",

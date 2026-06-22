@@ -328,12 +328,12 @@ def normalize_sources(
     input_root: str | Path,
     processed_root: str | Path,
     *,
-    include_legacy: bool = False,
+    include_preindexed: bool = False,
     dry_run: bool = False,
 ) -> list[NormalizationResult]:
     """Normalize every inspected LaTeX-source paper in a corpus manifest."""
     results: list[NormalizationResult] = []
-    for paper in select_papers(manifest, include_legacy):
+    for paper in select_papers(manifest, include_preindexed):
         report_path = Path(processed_root) / manifest.corpus_id / paper.id / "inspection.json"
         if not report_path.is_file():
             raise NormalizationError(f"Missing inspection report for {paper.id}: {report_path}")
@@ -446,7 +446,7 @@ def main() -> int:
     parser.add_argument("manifest_path", type=Path)
     parser.add_argument("--input-root", type=Path, default=Path("data/raw"))
     parser.add_argument("--processed-root", type=Path, default=Path("data/processed"))
-    parser.add_argument("--include-legacy", action="store_true")
+    parser.add_argument("--include-preindexed", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
@@ -456,7 +456,7 @@ def main() -> int:
             manifest,
             args.input_root,
             args.processed_root,
-            include_legacy=args.include_legacy,
+            include_preindexed=args.include_preindexed,
             dry_run=args.dry_run,
         )
     except NormalizationError as exc:
