@@ -173,12 +173,12 @@ def inspect_sources(
     input_root: str | Path,
     output_root: str | Path,
     *,
-    include_legacy: bool = False,
+    include_preindexed: bool = False,
     dry_run: bool = False,
 ) -> list[InspectionReport]:
     """Inspect acquired archives and persist one report for each selected paper."""
     reports: list[InspectionReport] = []
-    for paper in select_papers(manifest, include_legacy):
+    for paper in select_papers(manifest, include_preindexed):
         archive_path = Path(input_root) / manifest.corpus_id / paper.id / "source.tar.gz"
         if not archive_path.is_file():
             raise SourceInspectionError(f"Missing source archive for {paper.id}: {archive_path}")
@@ -215,7 +215,7 @@ def main() -> int:
     parser.add_argument("manifest_path", type=Path, help="Path to a validated corpus manifest.")
     parser.add_argument("--input-root", type=Path, default=Path("data/raw"))
     parser.add_argument("--output-root", type=Path, default=Path("data/processed"))
-    parser.add_argument("--include-legacy", action="store_true")
+    parser.add_argument("--include-preindexed", action="store_true")
     parser.add_argument("--dry-run", action="store_true", help="Inspect without writing reports.")
     args = parser.parse_args()
 
@@ -225,7 +225,7 @@ def main() -> int:
             manifest,
             args.input_root,
             args.output_root,
-            include_legacy=args.include_legacy,
+            include_preindexed=args.include_preindexed,
             dry_run=args.dry_run,
         )
     except SourceInspectionError as exc:

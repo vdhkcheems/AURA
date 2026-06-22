@@ -34,11 +34,11 @@ class AcquisitionResult:
     message: str
 
 
-def select_papers(manifest: CorpusManifest, include_legacy: bool) -> list[PaperManifest]:
+def select_papers(manifest: CorpusManifest, include_preindexed: bool) -> list[PaperManifest]:
     """Return LaTeX-source papers in deterministic ingestion order."""
     allowed_statuses = {"planned"}
-    if include_legacy:
-        allowed_statuses.add("already_indexed_legacy")
+    if include_preindexed:
+        allowed_statuses.add("already_indexed")
 
     return sorted(
         (
@@ -56,7 +56,7 @@ def acquire_sources(
     manifest: CorpusManifest,
     output_root: str | Path,
     *,
-    include_legacy: bool = False,
+    include_preindexed: bool = False,
     force: bool = False,
     dry_run: bool = False,
     opener: Callable[..., object] = urlopen,
@@ -65,7 +65,7 @@ def acquire_sources(
     corpus_root = Path(output_root) / manifest.corpus_id
     results: list[AcquisitionResult] = []
 
-    for paper in select_papers(manifest, include_legacy):
+    for paper in select_papers(manifest, include_preindexed):
         assert paper.arxiv_id is not None
         paper_root = corpus_root / paper.id
         archive_path = paper_root / "source.tar.gz"
@@ -204,7 +204,7 @@ def main() -> int:
         "--output-root", type=Path, default=Path("data/raw"), help="Directory for raw corpus files."
     )
     parser.add_argument(
-        "--include-legacy", action="store_true", help="Also acquire papers marked already_indexed_legacy."
+        "--include-preindexed", action="store_true", help="Also acquire papers marked already_indexed."
     )
     parser.add_argument("--force", action="store_true", help="Replace existing source archives.")
     parser.add_argument("--dry-run", action="store_true", help="Show planned downloads without writing files.")
@@ -214,7 +214,7 @@ def main() -> int:
     results = acquire_sources(
         manifest,
         args.output_root,
-        include_legacy=args.include_legacy,
+        include_preindexed=args.include_preindexed,
         force=args.force,
         dry_run=args.dry_run,
     )

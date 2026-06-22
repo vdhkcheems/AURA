@@ -1,7 +1,8 @@
 # AURA Web App
 
-The AURA web app is a Next.js App Router project. Its first implementation is a
-server-side, paper-grounded chat API over the live Gemini/Qdrant text index.
+The AURA web app is a Next.js App Router project with a guest-first,
+paper-grounded chat workspace over the live Gemini/Qdrant text index.
+`/` is the product introduction; `/chat` opens the workspace.
 
 ## Local setup
 
@@ -15,6 +16,18 @@ npm install
 npm run dev
 ```
 
+## Guest workspace
+
+The `/chat` workspace is usable without an account. It lets a visitor create, rename,
+and delete chats; browse the supported-paper library; scope a chat to one paper;
+and ask follow-up questions. Chat titles, messages, selected paper scopes, and
+retrieved sources are stored only in that browser under `aura.guest-chats.v1`.
+
+The sign-in button is intentionally a visual placeholder for a future
+account-backed history and sync feature. It does not authenticate a user or send
+guest conversation content anywhere except the chat API when a question is
+submitted.
+
 ## API
 
 ### `POST /api/chat`
@@ -25,15 +38,21 @@ Request:
 {
   "question": "How does self-attention work?",
   "paperId": "attention-is-all-you-need",
-  "topic": "transformers"
+  "topic": "transformers",
+  "history": [
+    { "role": "user", "content": "What is a residual connection?" },
+    { "role": "assistant", "content": "It adds an earlier representation..." }
+  ]
 }
 ```
 
 `paperId` and `topic` are optional Qdrant payload filters. The route embeds the
-question with Gemini, retrieves the top five chunks from Qdrant, and uses the
-Gemini API's Gemma 4 31B instruction model to answer only from that evidence. Its response includes the answer,
-retrieval scores, complete source records, cited-paper IDs, model name, and
-warnings.
+question with Gemini, retrieves the top five chunks from Qdrant, then streams
+Gemma 4 31B's grounded answer as newline-delimited JSON. It first emits `meta`
+with source records, model, and warnings; then `delta` events with answer text;
+and finally `done`. `history` is optional and accepts at most 12 short prior
+turns; it is used only to make a single answer conversational and is not
+persisted by the server.
 
 ### `GET /api/health`
 

@@ -66,8 +66,8 @@ class CorpusManifest:
         return sum(1 for paper in self.papers if paper.status == "planned")
 
     @property
-    def legacy_indexed_count(self) -> int:
-        return sum(1 for paper in self.papers if paper.status == "already_indexed_legacy")
+    def preindexed_count(self) -> int:
+        return sum(1 for paper in self.papers if paper.status == "already_indexed")
 
 
 def load_manifest(path: str | Path) -> CorpusManifest:
@@ -254,7 +254,7 @@ def main() -> int:
     print(f"Manifest valid: {manifest.corpus_id}")
     print(f"Papers: {manifest.paper_count}")
     print(f"Planned: {manifest.planned_count}")
-    print(f"Legacy indexed: {manifest.legacy_indexed_count}")
+    print(f"Already indexed: {manifest.preindexed_count}")
     return 0
 
 

@@ -11,7 +11,8 @@ The planned responsibilities are:
 - Upsert vectors and metadata into Qdrant.
 - Provide retrieval utilities for local validation.
 
-For the first migration stage, this is intentionally separate from the web app. User uploads and live processing jobs are deferred until the curated corpus flow is reliable.
+This service is intentionally separate from the web app so corpus work can run
+offline and be validated before it changes the hosted search index.
 
 ## Gemini and Qdrant indexing
 
@@ -62,7 +63,7 @@ Download the planned papers after confirming the list:
 python3 -m services.rag.aura_rag.acquire_sources data/manifests/ml-core-v1.json
 ```
 
-Archives and acquisition records are stored under `data/raw/<corpus-id>/<paper-id>/` and are intentionally ignored by Git. The command validates that each downloaded archive is readable and includes at least one `.tex` file. Use `--include-legacy` to fetch the original prototype paper as well.
+Archives and acquisition records are stored under `data/raw/<corpus-id>/<paper-id>/` and are intentionally ignored by Git. The command validates that each downloaded archive is readable and includes at least one `.tex` file. Use `--include-preindexed` when rebuilding the complete existing corpus, which includes *Attention Is All You Need*.
 
 ## Source inspection
 

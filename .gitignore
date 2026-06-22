@@ -1,8 +1,6 @@
 .venv/
 __pycache__
-faiss_index.index/
 .env
-.streamlit/
 data/raw/*
 !data/raw/.gitkeep
 data/processed/*
