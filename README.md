@@ -5,6 +5,8 @@ paper companion for people learning machine learning. Pick a supported paper,
 ask a question in plain language, follow up naturally, and inspect the exact
 paper passages AURA retrieved before it answered.
 
+**Try AURA:** [aura-aa.vercel.app](https://aura-aa.vercel.app/)
+
 The live product is a Next.js application backed by Gemini and Qdrant. Its
 curated machine-learning library currently contains ten LaTeX-source papers and
 451 section-aware text chunks, including equations and source provenance.
